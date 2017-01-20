@@ -3,43 +3,33 @@ from games.models import GameCategory
 from games.models import Game
 from games.models import Player
 from games.models import PlayerScore
-import games.views
+from django.contrib.auth.models import User
 
-'''
-class GameSerializer(serializers.Serializer):
-    pk = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(max_length=200)
-    release_date = serializers.DateTimeField()
-    game_category = serializers.CharField(max_length=200)
-    played = serializers.BooleanField(required=False)
 
-    def create(self, validated_data):
-        return Game.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.release_date = validated_data.get('release_date', instance.release_date)
-        instance.game_category = validated_data.get('game_category', instance.game_category)
-        instance.played = validated_data.get('played', instance.played)
-        instance.save()
-        return instance
-'''
-
-class GameSerializer(serializers.ModelSerializer):
+class UserGameSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Game
-        fields = ('id',
-                  'name',
-                  'release_date',
-                  'game_category',
-                  'played')
+        fields = (
+            'url',
+            'name')
+
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    games = UserGameSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('url',
+                  'pk',
+                  'username',
+                  'games')
 
 
 class GameCategorySerializer(serializers.HyperlinkedModelSerializer):
     games = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
-        view_name='game_detail'
+        view_name='game-detail'
     )
 
     class Meta:
@@ -52,13 +42,16 @@ class GameCategorySerializer(serializers.HyperlinkedModelSerializer):
 
 
 class GameSerializer(serializers.HyperlinkedModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
     # We want to display the game category's name instead of the id
     game_category = serializers.SlugRelatedField(queryset=GameCategory.objects.all(),
                                                  slug_field='name')
 
     class Meta:
         model = Game
+        depth = 4
         fields = ( 'url',
+                   'owner',
                    'game_category',
                    'name',
                    'release_date',
