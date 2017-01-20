@@ -39,7 +39,22 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'games.apps.GamesConfig',
+    'crispy_forms',
+    'django_nose',
 ]
+
+
+# We want to use nose to run all the tests
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
+# We want nose to measure coverage on the games app
+NOSE_ARGS = [
+    '--with-coverage',
+    '--cover-erase',
+    '--cover-inclusive',
+    '--cover-package=games',
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -124,7 +139,21 @@ STATIC_URL = '/static/'
 REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS':
                   'games.pagination.LimitOffsetPaginationWithMaxLimit',
                   'PAGE_SIZE': 5,
+                  'DEFAULT_FILTER_BACKENDS': (
+                      'rest_framework.filters.DjangoFilterBackend',
+                      'rest_framework.filters.SearchFilter',
+                      'rest_framework.filters.OrderingFilter',
+                  ),
                   'DEFAULT_AUTHENTICATION_CLASSES': (
                       'rest_framework.authentication.BasicAuthentication',
-                      'rest_framework.authentication.SessionAuthentication',)
+                      'rest_framework.authentication.SessionAuthentication',),
+                  'DEFAULT_THROTTLE_CLASSES': (
+                      'rest_framework.throttling.AnonRateThrottle',
+                      'rest_framework.throttling.UserRateThrottle',
+                  ),
+                  'DEFAULT_THROTTLE_RATES': {
+                      'anon': '5/hour',
+                      'user': '20/hour',
+                      'game-categories': '30/hour',
+                  }
                   }
